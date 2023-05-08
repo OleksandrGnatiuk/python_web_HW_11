@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.database.models import Contact
 from src.schemas import ContactModel
-
+from datetime import datetime, timedelta
+from sqlalchemy import text
 
 async def get_contacts(limit: int, offset: int, db: Session):
     contacts = db.query(Contact).limit(limit).offset(offset).all()
@@ -13,6 +14,22 @@ async def get_contacts(limit: int, offset: int, db: Session):
 async def get_contact_by_id(contact_id: int, db: Session):
     contact = db.query(Contact).filter_by(id=contact_id).first()
     return contact
+
+#
+# async def find_contacts(db: Session):
+#     contacts = db.query(Contact).filter_by().all()
+#     return contacts
+
+
+async def search_contacts_by_birthday(limit: int, offset: int, db: Session):
+    sql_select = """
+    select *
+    from contacts
+    WHERE (STRFTIME('%m-%d', birthday)
+    between strftime('%m-%d', date('now')) and strftime('%m-%d', date('now','+7 days')));
+    """
+    contacts = db.execute(text(sql_select)).all()
+    return contacts
 
 
 async def create(body: ContactModel, db: Session = Depends(get_db)):
