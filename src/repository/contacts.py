@@ -3,32 +3,43 @@ from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.database.models import Contact
 from src.schemas import ContactModel
-from datetime import datetime, timedelta
 from sqlalchemy import text
 
-async def get_contacts(limit: int, offset: int, db: Session):
-    contacts = db.query(Contact).limit(limit).offset(offset).all()
-    return contacts
+
+async def get_contacts(limit: int, offset: int, first_name: str, last_name: str, email: str, db: Session):
+    first_name_query = db.query(Contact).filter(Contact.first_name == first_name)
+    last_name_query = db.query(Contact).filter(Contact.last_name == last_name)
+    email_query = db.query(Contact).filter(Contact.email == email)
+    if first_name and last_name and email:
+        return first_name_query.union(last_name_query).union(email_query).all()
+    if first_name and last_name:
+        return first_name_query.union(last_name_query).all()
+    if first_name and email:
+        return first_name_query.union(email_query).all()
+    if last_name and email:
+        return last_name_query.union(email_query).all()
+    if first_name:
+        return first_name_query.all()
+    if last_name:
+        return last_name_query.all()
+    if email:
+        return email_query.all()
+    return db.query(Contact).limit(limit).offset(offset).all()
 
 
 async def get_contact_by_id(contact_id: int, db: Session):
     contact = db.query(Contact).filter_by(id=contact_id).first()
     return contact
 
-#
-# async def find_contacts(db: Session):
-#     contacts = db.query(Contact).filter_by().all()
-#     return contacts
-
 
 async def search_contacts_by_birthday(limit: int, offset: int, db: Session):
-    sql_select = """
-    select *
-    from contacts
+    raw_sql_select = """
+    SELECT *
+    FROM contacts
     WHERE (STRFTIME('%m-%d', birthday)
-    between strftime('%m-%d', date('now')) and strftime('%m-%d', date('now','+7 days')));
+    BETWEEN STRFTIME('%m-%d', date('now')) AND STRFTIME('%m-%d', date('now','+7 days')));
     """
-    contacts = db.execute(text(sql_select)).all()
+    contacts = db.execute(text(raw_sql_select)).all()
     return contacts
 
 
