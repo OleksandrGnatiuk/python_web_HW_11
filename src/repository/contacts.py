@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.database.models import Contact
 from src.schemas import ContactModel
-from sqlalchemy import text
+from datetime import datetime, timedelta
 
 
 async def get_contacts(limit: int, offset: int, first_name: str, last_name: str, email: str, db: Session):
@@ -33,14 +33,17 @@ async def get_contact_by_id(contact_id: int, db: Session):
 
 
 async def search_contacts_by_birthday(limit: int, offset: int, db: Session):
-    raw_sql_select = """
-    SELECT *
-    FROM contacts
-    WHERE (STRFTIME('%m-%d', birthday)
-    BETWEEN STRFTIME('%m-%d', date('now')) AND STRFTIME('%m-%d', date('now','+7 days')));
-    """
-    contacts = db.execute(text(raw_sql_select)).all()
-    return contacts
+    today = datetime.today()
+    current_year = today.year
+    birthdays_in_period = []
+
+    for contact in db.query(Contact).limit(limit).offset(offset).all():
+        y, m, d, *_ = contact.birthday.split('-')
+        contact_birthday = datetime(year=current_year, month=int(m), day=int(d))
+
+        if today <= contact_birthday <= today + timedelta(days=7):
+            birthdays_in_period.append(contact)
+    return birthdays_in_period
 
 
 async def create(body: ContactModel, db: Session = Depends(get_db)):

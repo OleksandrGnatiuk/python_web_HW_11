@@ -10,7 +10,7 @@ from sqlalchemy import text
 from src.database.db import get_db
 from src.routes import contacts
 
-app = FastAPI()
+app = FastAPI(title='Homework 11: Contact book')
 
 
 @app.middleware("http")

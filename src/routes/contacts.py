@@ -29,7 +29,7 @@ async def get_contacts(limit: int = Query(default=10),
             name='Get a list of all contacts who has birthday during next 7 days')
 async def get_contacts_by_birthday(limit: int = Query(10, le=300), offset: int = 0, db: Session = Depends(get_db)):
     contacts = await repository_contacts.search_contacts_by_birthday(limit, offset, db)
-    if len(contacts) == 0:
+    if not contacts:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found!")
     return contacts
 
